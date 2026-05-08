@@ -1,0 +1,382 @@
+{
+  "name": "🍃 Cafe Outreach — Full Pipeline",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "11111111-1111-1111-1111-111111111111",
+      "name": "Run Manually",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [-200, 200]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * 1-5"
+            }
+          ]
+        }
+      },
+      "id": "22222222-2222-2222-2222-222222222222",
+      "name": "Daily 9 AM (Mon–Fri)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-200, 400]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cfg-api-key",
+              "name": "GOOGLE_API_KEY",
+              "value": "AIzaSyDnDOoOnNib5fgBnAcCXxqkTdrMSQ-eJd0",
+              "type": "string"
+            },
+            {
+              "id": "cfg-cx",
+              "name": "SEARCH_CX",
+              "value": "73683eebf9b4f488d",
+              "type": "string"
+            },
+            {
+              "id": "cfg-name",
+              "name": "YOUR_NAME",
+              "value": "Naman",
+              "type": "string"
+            },
+            {
+              "id": "cfg-phone",
+              "name": "YOUR_PHONE",
+              "value": "+91 XXXXXXXXXX",
+              "type": "string"
+            },
+            {
+              "id": "cfg-ig",
+              "name": "YOUR_INSTAGRAM",
+              "value": "@therecipetailor",
+              "type": "string"
+            },
+            {
+              "id": "cfg-target",
+              "name": "TARGET_COUNT",
+              "value": 10,
+              "type": "number"
+            },
+            {
+              "id": "cfg-sheets",
+              "name": "SHEETS_ID",
+              "value": "YOUR_GOOGLE_SHEETS_ID_HERE",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "33333333-3333-3333-3333-333333333333",
+      "name": "⚙️ Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [40, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://maps.googleapis.com/maps/api/place/nearbysearch/json",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "location", "value": "12.9716,77.5946" },
+            { "name": "radius",   "value": "15000" },
+            { "name": "type",     "value": "cafe" },
+            { "name": "keyword",  "value": "smoothie bowl acai healthy" },
+            { "name": "key",      "value": "={{ $json.GOOGLE_API_KEY }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "44444444-4444-4444-4444-444444444444",
+      "name": "🔍 Find Cafes",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [280, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\nconst config = $('⚙️ Config').first().json;\nconst results = (data.results || []).slice(0, config.TARGET_COUNT);\n\nreturn results.map(place => ({\n  json: {\n    place_id:       place.place_id,\n    name:           place.name,\n    address:        place.vicinity || '',\n    website:        '',\n    phone:          '',\n    email:          '',\n    instagram:      '',\n    GOOGLE_API_KEY: config.GOOGLE_API_KEY,\n    SEARCH_CX:      config.SEARCH_CX,\n    YOUR_NAME:      config.YOUR_NAME,\n    YOUR_PHONE:     config.YOUR_PHONE,\n    YOUR_INSTAGRAM: config.YOUR_INSTAGRAM,\n    SHEETS_ID:      config.SHEETS_ID\n  }\n}));"
+      },
+      "id": "55555555-5555-5555-5555-555555555555",
+      "name": "📋 Parse Cafes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [520, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://maps.googleapis.com/maps/api/place/details/json",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "place_id", "value": "={{ $json.place_id }}" },
+            { "name": "fields",   "value": "website,formatted_phone_number" },
+            { "name": "key",      "value": "={{ $json.GOOGLE_API_KEY }}" }
+          ]
+        },
+        "options": {}
+      },
+      "continueOnFail": true,
+      "id": "66666666-6666-6666-6666-666666666666",
+      "name": "📍 Get Place Details",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [760, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const details = $input.item.json;\nconst orig    = $('📋 Parse Cafes').item.json;\nreturn [{\n  json: {\n    ...orig,\n    website: details.result?.website || '',\n    phone:   details.result?.formatted_phone_number || ''\n  }\n}];"
+      },
+      "id": "77777777-7777-7777-7777-777777777777",
+      "name": "🗺️ Set Website",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1000, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.website }}",
+        "options": {
+          "timeout": 8000,
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "continueOnFail": true,
+      "id": "88888888-8888-8888-8888-888888888888",
+      "name": "🌐 Scrape Website",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1240, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/customsearch/v1",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ '\"' + $('🗺️ Set Website').item.json.name + '\" bangalore email contact' }}"
+            },
+            { "name": "key", "value": "={{ $('🗺️ Set Website').item.json.GOOGLE_API_KEY }}" },
+            { "name": "cx",  "value": "={{ $('🗺️ Set Website').item.json.SEARCH_CX }}" },
+            { "name": "num", "value": "5" }
+          ]
+        },
+        "options": {}
+      },
+      "continueOnFail": true,
+      "id": "99999999-9999-9999-9999-999999999999",
+      "name": "🔎 Search Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1480, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/customsearch/v1",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ '\"' + $('🗺️ Set Website').item.json.name + '\" bangalore site:instagram.com' }}"
+            },
+            { "name": "key", "value": "={{ $('🗺️ Set Website').item.json.GOOGLE_API_KEY }}" },
+            { "name": "cx",  "value": "={{ $('🗺️ Set Website').item.json.SEARCH_CX }}" },
+            { "name": "num", "value": "3" }
+          ]
+        },
+        "options": {}
+      },
+      "continueOnFail": true,
+      "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "name": "📱 Search Instagram",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1720, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ─── Pull data from upstream nodes ───────────────────────────────────────────\nconst orig          = $('🗺️ Set Website').item.json;\nconst htmlRaw       = $('🌐 Scrape Website').item.json;\nconst emailSearch   = $('🔎 Search Email').item.json;\nconst igSearch      = $('📱 Search Instagram').item.json;\n\n// ─── Helpers ─────────────────────────────────────────────────────────────────\nconst blockedDomains = new Set([\n  'example.com','sentry.io','wixpress.com','schema.org','w3.org',\n  'cloudflare.com','googleapis.com','squarespace.com','wordpress.com','shopify.com'\n]);\nconst blockedIG = new Set(['p','reel','reels','explore','stories','accounts','sharer']);\nconst emailRe   = /\\b[A-Za-z0-9._%+\\-]+@[A-Za-z0-9.\\-]+\\.[A-Za-z]{2,}\\b/g;\nconst igRe      = /instagram\\.com\\/([A-Za-z0-9_.]+)/g;\n\nfunction findEmail(text) {\n  const matches = (text || '').match(emailRe) || [];\n  for (const e of matches) {\n    const domain = e.split('@')[1]?.toLowerCase();\n    if (domain && !blockedDomains.has(domain)) return e.toLowerCase();\n  }\n  return '';\n}\n\nfunction findIG(text) {\n  const matches = [...(text || '').matchAll(igRe)];\n  for (const m of matches) {\n    const h = m[1].replace(/\\/$/, '');\n    if (h && !blockedIG.has(h.toLowerCase()) && h.length > 1) return h;\n  }\n  return '';\n}\n\n// ─── Layer 1: Website HTML ────────────────────────────────────────────────────\nconst html = typeof htmlRaw === 'string'\n  ? htmlRaw\n  : (htmlRaw?.data || htmlRaw?.body || JSON.stringify(htmlRaw));\n\nlet email     = findEmail(typeof html === 'string' ? html : '');\nlet instagram = findIG(typeof html === 'string' ? html : '');\n\n// ─── Layer 2: Google Custom Search ───────────────────────────────────────────\nif (!email) {\n  const snippets = (emailSearch?.items || []).map(i => i.snippet || '').join(' ');\n  email = findEmail(snippets);\n}\n\nif (!instagram) {\n  const links = (igSearch?.items || []).map(i => i.link || '').join(' ');\n  instagram = findIG(links);\n}\n\n// ─── Layer 3: Instagram DM flag ───────────────────────────────────────────────\n// If no email found, the workflow will branch to Generate DM below.\n\nreturn [{ json: { ...orig, email, instagram } }];"
+      },
+      "id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+      "name": "🎯 Build Contact",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1960, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-email",
+              "leftValue": "={{ $json.email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+      "name": "✉️ Has Email?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2200, 300]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "Granola toppings your bowls will love - The Recipe Tailor",
+        "emailType": "text",
+        "message": "=Hi there,\n\nI came across {{ $json.name }} and love what you are doing with your menu — it is exactly the kind of place we love partnering with.\n\nI am {{ $json.YOUR_NAME }} from The Recipe Tailor, a Bangalore-based brand making small-batch, guilt-free granolas and cookies in flavours you will not find anywhere else.\n\nA few that work really well as bowl toppings:\n- Mix Berry (oats, almonds, cranberries, blueberries, strawberries)\n- Mango Coconut (dried mango, desiccated coconut, coconut sugar)\n- Masala Chai granola (warm, spiced, unique)\n- Coffee Chocolate (for cafes that love bold flavours)\n\nAll made with clean ingredients, your choice of sweetener (desi khand, coconut sugar, or regular), and an optional protein boost. We supply B2B from Rs. 430/kg.\n\nHappy to send you a sample pack so your team can try before committing to anything.\n\nWould a quick call or visit work this week?\n\nWarm regards,\n{{ $json.YOUR_NAME }}\nThe Recipe Tailor\n{{ $json.YOUR_PHONE }}\nInstagram: {{ $json.YOUR_INSTAGRAM }}",
+        "additionalFields": {
+          "fromName": "Naman | The Recipe Tailor"
+        }
+      },
+      "id": "dddddddd-dddd-dddd-dddd-dddddddddddd",
+      "name": "📤 Send Cold Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [2440, 140],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gmail-cred",
+          "name": "Gmail OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.item.json;\nconst flavors = 'Mix Berry, Mango Coconut';\n\nconst dm = [\n  `Hi! Love what you are doing at ${item.name}.`,\n  '',\n  `I am ${item.YOUR_NAME} from The Recipe Tailor — we make small-batch, guilt-free granolas in interesting flavours (${flavors} and more). Would love to partner with you as a topping option for your bowls.`,\n  '',\n  `We supply B2B from Rs. 430/kg and are happy to send a sample pack first. Would that work?`\n].join('\\n');\n\nreturn [{ json: { ...item, dm_text: dm, outreach_method: 'instagram_dm' } }];"
+      },
+      "id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+      "name": "💬 Generate DM",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2440, 460]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "mode": "id",
+          "value": "={{ $json.SHEETS_ID }}"
+        },
+        "sheetName": {
+          "mode": "name",
+          "value": "Leads"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Date":            "={{ new Date().toISOString().split('T')[0] }}",
+            "Cafe Name":       "={{ $json.name }}",
+            "Area":            "={{ $json.address }}",
+            "Website":         "={{ $json.website }}",
+            "Phone":           "={{ $json.phone }}",
+            "Contact Email":   "={{ $json.email }}",
+            "Instagram":       "={{ $json.instagram }}",
+            "Outreach Method": "={{ $json.outreach_method || 'email' }}",
+            "DM Text":         "={{ $json.dm_text || '' }}",
+            "Status":          "Contacted"
+          }
+        },
+        "options": {}
+      },
+      "id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+      "name": "📊 Log to Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [2680, 300],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "sheets-cred",
+          "name": "Google Sheets OAuth2"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Run Manually": {
+      "main": [[{ "node": "⚙️ Config", "type": "main", "index": 0 }]]
+    },
+    "Daily 9 AM (Mon–Fri)": {
+      "main": [[{ "node": "⚙️ Config", "type": "main", "index": 0 }]]
+    },
+    "⚙️ Config": {
+      "main": [[{ "node": "🔍 Find Cafes", "type": "main", "index": 0 }]]
+    },
+    "🔍 Find Cafes": {
+      "main": [[{ "node": "📋 Parse Cafes", "type": "main", "index": 0 }]]
+    },
+    "📋 Parse Cafes": {
+      "main": [[{ "node": "📍 Get Place Details", "type": "main", "index": 0 }]]
+    },
+    "📍 Get Place Details": {
+      "main": [[{ "node": "🗺️ Set Website", "type": "main", "index": 0 }]]
+    },
+    "🗺️ Set Website": {
+      "main": [[{ "node": "🌐 Scrape Website", "type": "main", "index": 0 }]]
+    },
+    "🌐 Scrape Website": {
+      "main": [[{ "node": "🔎 Search Email", "type": "main", "index": 0 }]]
+    },
+    "🔎 Search Email": {
+      "main": [[{ "node": "📱 Search Instagram", "type": "main", "index": 0 }]]
+    },
+    "📱 Search Instagram": {
+      "main": [[{ "node": "🎯 Build Contact", "type": "main", "index": 0 }]]
+    },
+    "🎯 Build Contact": {
+      "main": [[{ "node": "✉️ Has Email?", "type": "main", "index": 0 }]]
+    },
+    "✉️ Has Email?": {
+      "main": [
+        [{ "node": "📤 Send Cold Email", "type": "main", "index": 0 }],
+        [{ "node": "💬 Generate DM",     "type": "main", "index": 0 }]
+      ]
+    },
+    "📤 Send Cold Email": {
+      "main": [[{ "node": "📊 Log to Sheets", "type": "main", "index": 0 }]]
+    },
+    "💬 Generate DM": {
+      "main": [[{ "node": "📊 Log to Sheets", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "cafe-outreach-v1",
+  "meta": {
+    "instanceId": "cafe-outreach"
+  },
+  "id": "cafe-outreach-pipeline",
+  "tags": []
+}
