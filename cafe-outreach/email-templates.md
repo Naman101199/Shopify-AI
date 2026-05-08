@@ -1,20 +1,20 @@
-# The Recipe Tailor — Cafe Outreach Email Templates
+# The Recipe Tailor - Cafe Outreach Email Templates
 
 ---
 
 ## Template 1: Cold Outreach (Initial Email)
 
-**Subject:** Granola toppings your bowls will thank you for — The Recipe Tailor
+**Subject:** Granola toppings your bowls will thank you for - The Recipe Tailor
 
 **Body:**
 
 Hi [Owner/Manager Name],
 
-I came across [Cafe Name] and love what you're doing with your [smoothie bowls / acai bowls / healthy menu] — it's exactly the kind of place we love partnering with.
+I came across [Cafe Name] and love what you're doing with your [smoothie bowls / acai bowls / healthy menu] - it's exactly the kind of place we love partnering with.
 
 I'm Naman from **The Recipe Tailor**, a Bangalore-based brand making small-batch, guilt-free granolas and cookies in flavours you won't find anywhere else.
 
-Think: **Masala Chai granola, Pina Colada granola, Chocolate Salted Caramel, Mix Berry** — all made with clean ingredients, your choice of sweetener (desi khand, coconut sugar, or regular), and an optional protein boost.
+Think: **Masala Chai granola, Pina Colada granola, Chocolate Salted Caramel, Mix Berry** - all made with clean ingredients, your choice of sweetener (desi khand, coconut sugar, or regular), and an optional protein boost.
 
 We work B2B and supply in bulk (per kg), so your team can use our granolas as toppings, mix-ins, or an on-menu feature. Starting at ₹430/kg.
 
@@ -46,7 +46,7 @@ Hi [Name],
 
 Just following up on my earlier note about The Recipe Tailor granolas.
 
-I know inboxes get busy — wanted to make sure this didn't slip through. We'd love to send [Cafe Name] a sample pack to try, completely on us.
+I know inboxes get busy - wanted to make sure this didn't slip through. We'd love to send [Cafe Name] a sample pack to try, completely on us.
 
 Our granolas are made fresh in small batches, with no preservatives or artificial flavours. They've been getting great feedback from health-conscious customers who love knowing exactly what's in their food.
 
@@ -60,13 +60,13 @@ The Recipe Tailor
 
 ## Template 3: Follow-Up #2 (10–14 days after initial email)
 
-**Subject:** One last note — The Recipe Tailor x [Cafe Name]
+**Subject:** One last note - The Recipe Tailor x [Cafe Name]
 
 **Body:**
 
 Hi [Name],
 
-I'll keep this short — I'd love for [Cafe Name] to try our granolas as toppings for your bowls. If the timing isn't right, no worries at all.
+I'll keep this short - I'd love for [Cafe Name] to try our granolas as toppings for your bowls. If the timing isn't right, no worries at all.
 
 But if you're open to it, I'm happy to drop by with samples at a time that suits you. No pitch, just food.
 
@@ -81,7 +81,7 @@ The Recipe Tailor
 
 ## Template 4: Post-Meeting / Sample Follow-Up
 
-**Subject:** Great meeting you — next steps from The Recipe Tailor
+**Subject:** Great meeting you - next steps from The Recipe Tailor
 
 **Body:**
 
@@ -91,13 +91,13 @@ It was great meeting you at [Cafe Name]! Really enjoyed seeing the space and tal
 
 As discussed, I'm attaching our B2B catalog with full pricing. A quick summary of what we can offer:
 
-**Granola Toppings** — ₹430–500/kg depending on sweetener choice
+**Granola Toppings** - ₹430–500/kg depending on sweetener choice
 - 16+ flavours, including custom options
 - Protein add-on available (+₹200/kg)
 - Minimum order: [X kg]
 - Freshly made, delivered within [X days]
 
-**Cookies** — ₹300–750/kg
+**Cookies** - ₹300–750/kg
 - Millet-based and whole wheat options
 - Great as a side or packaged add-on for your customers
 
@@ -127,7 +127,7 @@ Apply these labels to track each cafe thread:
 
 ## Outreach Checklist (per cafe)
 
-- [ ] Research cafe — confirm they have bowls on menu
+- [ ] Research cafe - confirm they have bowls on menu
 - [ ] Find direct email / Instagram DM contact
 - [ ] Personalise Template 1 with cafe name + specific bowl mention
 - [ ] Send email, apply label `2 - Contacted`
