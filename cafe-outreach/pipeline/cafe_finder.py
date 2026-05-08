@@ -1,9 +1,12 @@
-import time
 import logging
+import time
 
-import googlemaps
+import requests
 
 log = logging.getLogger(__name__)
+
+PLACES_TEXT_SEARCH = "https://maps.googleapis.com/maps/api/place/textsearch/json"
+PLACES_DETAILS = "https://maps.googleapis.com/maps/api/place/details/json"
 
 SEARCH_QUERIES = [
     "smoothie bowl cafe Bangalore",
@@ -16,11 +19,10 @@ SEARCH_QUERIES = [
     "acai smoothie cafe Jayanagar Bangalore",
 ]
 
-PLACE_FIELDS = ["name", "formatted_address", "website", "formatted_phone_number"]
+DETAIL_FIELDS = "name,formatted_address,website,formatted_phone_number"
 
 
 def find_new_cafes(api_key: str, existing_place_ids: set, target: int = 10) -> list:
-    gmaps = googlemaps.Client(key=api_key)
     cafes = []
     seen = set(existing_place_ids)
 
@@ -29,16 +31,26 @@ def find_new_cafes(api_key: str, existing_place_ids: set, target: int = 10) -> l
             break
 
         try:
-            results = gmaps.places(query=query)
-            for place in results.get("results", []):
+            resp = requests.get(
+                PLACES_TEXT_SEARCH,
+                params={"query": query, "key": api_key},
+                timeout=10,
+            )
+            resp.raise_for_status()
+            results = resp.json().get("results", [])
+
+            for place in results:
                 if len(cafes) >= target:
                     break
-                pid = place["place_id"]
-                if pid in seen:
+                pid = place.get("place_id", "")
+                if not pid or pid in seen:
                     continue
                 seen.add(pid)
 
-                details = gmaps.place(pid, fields=PLACE_FIELDS).get("result", {})
+                details = _get_details(api_key, pid)
+                if not details:
+                    continue
+
                 cafes.append({
                     "place_id": pid,
                     "name": details.get("name", ""),
@@ -46,10 +58,24 @@ def find_new_cafes(api_key: str, existing_place_ids: set, target: int = 10) -> l
                     "website": details.get("website", ""),
                     "phone": details.get("formatted_phone_number", ""),
                 })
-                log.info("  Found cafe: %s", details.get("name", pid))
-                time.sleep(0.3)
+                log.info("  Found: %s", details.get("name", pid))
+                time.sleep(0.2)
 
         except Exception as exc:
             log.warning("Error on query '%s': %s", query, exc)
 
     return cafes
+
+
+def _get_details(api_key: str, place_id: str) -> dict:
+    try:
+        resp = requests.get(
+            PLACES_DETAILS,
+            params={"place_id": place_id, "fields": DETAIL_FIELDS, "key": api_key},
+            timeout=10,
+        )
+        resp.raise_for_status()
+        return resp.json().get("result", {})
+    except Exception as exc:
+        log.debug("Details fetch failed for %s: %s", place_id, exc)
+        return {}
