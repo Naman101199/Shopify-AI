@@ -1,8 +1,8 @@
 """
 Step 1 of the daily pipeline - run this script first.
 
-It finds new cafes via Google Places API, scrapes contact emails,
-and writes results to discovery_output.json for Claude to act on.
+Finds new cafes, scrapes emails + Instagram handles, generates
+email + DM drafts, and writes results to discovery_output.json.
 
 Usage:
     cd cafe-outreach
@@ -17,16 +17,19 @@ from datetime import date
 from dotenv import load_dotenv
 
 from pipeline.cafe_finder import find_new_cafes
-from pipeline.contact_finder import find_contact_email
-from pipeline.email_drafter import generate_email
-from pipeline.lead_tracker import load_leads, get_existing_place_ids, get_existing_cafe_names, save_lead
+from pipeline.contact_finder import find_contact_info
+from pipeline.email_drafter import generate_email, generate_instagram_dm
+from pipeline.lead_tracker import (
+    load_leads,
+    get_existing_place_ids,
+    get_existing_cafe_names,
+    save_lead,
+    update_lead,
+)
 
 load_dotenv()
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s %(levelname)s %(message)s",
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger(__name__)
 
 OUTPUT_FILE = os.path.join(os.path.dirname(__file__), "discovery_output.json")
@@ -34,6 +37,7 @@ OUTPUT_FILE = os.path.join(os.path.dirname(__file__), "discovery_output.json")
 
 def run():
     api_key = os.environ.get("GOOGLE_PLACES_API_KEY", "")
+    search_cx = os.environ.get("GOOGLE_SEARCH_CX", "")
     target = int(os.environ.get("DAILY_TARGET", 10))
 
     if not api_key:
@@ -47,7 +51,6 @@ def run():
     existing_names = get_existing_cafe_names(leads)
     log.info("Existing leads: %d", len(leads))
 
-    # Find new cafes
     cafes = find_new_cafes(api_key, existing_ids, target=target)
     log.info("Found %d new cafes", len(cafes))
 
@@ -58,8 +61,8 @@ def run():
             log.info("Skipping duplicate: %s", name)
             continue
 
-        # Save immediately as Identified so reruns don't re-fetch
         area = _extract_area(cafe["address"])
+
         save_lead({
             "Cafe Name": name,
             "Area": area,
@@ -78,31 +81,47 @@ def run():
         })
         existing_names.add(name.strip().lower())
 
-        # Find email
-        email = find_contact_email(cafe["website"])
+        log.info("Finding contact info for: %s", name)
+        contact = find_contact_info(
+            website_url=cafe["website"],
+            cafe_name=name,
+            api_key=api_key,
+            search_cx=search_cx,
+        )
 
-        # Generate email content
-        subject, body = generate_email(cafe_name=name)
+        # Update CSV with any contact info found
+        if contact["email"] or contact["instagram"]:
+            update_lead(cafe["place_id"], {
+                "Contact Email": contact["email"],
+                "Instagram": contact["instagram"],
+            })
+
+        subject, email_body = generate_email(cafe_name=name)
+        dm_body = generate_instagram_dm(cafe_name=name)
 
         results.append({
             "place_id": cafe["place_id"],
             "cafe_name": name,
             "area": area,
             "website": cafe["website"],
-            "contact_email": email,
+            "contact_email": contact["email"],
+            "instagram": contact["instagram"],
             "subject": subject,
-            "body": body,
-            "has_email": bool(email),
+            "email_body": email_body,
+            "dm_body": dm_body,
+            "has_email": bool(contact["email"]),
+            "has_instagram": bool(contact["instagram"]),
         })
 
-    # Write output for Claude
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         json.dump({"date": date.today().isoformat(), "cafes": results}, f, indent=2)
 
     with_email = sum(1 for r in results if r["has_email"])
-    log.info("===== Discovery done. %d cafes | %d with email | Output: %s =====",
-             len(results), with_email, OUTPUT_FILE)
-
+    with_ig = sum(1 for r in results if r["has_instagram"])
+    log.info(
+        "===== Done. %d cafes | %d with email | %d with Instagram | Output: %s =====",
+        len(results), with_email, with_ig, OUTPUT_FILE,
+    )
     return results
 
 

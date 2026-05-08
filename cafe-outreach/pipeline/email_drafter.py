@@ -4,6 +4,7 @@ FLAVOR_MAP = {
     "tropical":  ["Mango Coconut", "Pina Colada", "Coconut Cranberry"],
     "chocolate": ["Coffee Chocolate", "Chocolate Salted Caramel", "Almond Dark Chocolate"],
     "coffee":    ["Coffee Chocolate", "Coffee", "Masala Chai"],
+    "matcha":    ["Lemon Honey", "Mix Seeds & Fruit", "Coconut Cranberry"],
     "default":   ["Mix Berry", "Mango Coconut", "Masala Chai", "Coffee Chocolate"],
 }
 
@@ -20,6 +21,8 @@ def pick_flavors(menu_hint: str = "") -> list:
         return FLAVOR_MAP["chocolate"]
     if "coffee" in hint or "espresso" in hint:
         return FLAVOR_MAP["coffee"]
+    if "matcha" in hint:
+        return FLAVOR_MAP["matcha"]
     return FLAVOR_MAP["default"]
 
 
@@ -28,8 +31,7 @@ def generate_email(cafe_name: str, contact_name: str = "", menu_hint: str = "") 
     flavors = pick_flavors(menu_hint)
     flavor_lines = "\n".join(f"- {f}" for f in flavors)
 
-    subject = f"Granola toppings your bowls will love - The Recipe Tailor"
-
+    subject = "Granola toppings your bowls will love - The Recipe Tailor"
     body = f"""{greeting},
 
 I came across {cafe_name} and love what you are doing with your menu - it is exactly the kind of place we love partnering with.
@@ -52,3 +54,14 @@ The Recipe Tailor
 [Instagram Handle]"""
 
     return subject, body
+
+
+def generate_instagram_dm(cafe_name: str, menu_hint: str = "") -> str:
+    flavors = pick_flavors(menu_hint)
+    top_flavors = ", ".join(flavors[:2])
+
+    return f"""Hi! Love what you are doing at {cafe_name}.
+
+I am Naman from The Recipe Tailor - we make small-batch, guilt-free granolas in interesting flavours ({top_flavors} and more). Would love to partner with you as a topping option for your bowls.
+
+We supply B2B from Rs. 430/kg and are happy to send a sample pack first. Would that work?"""
